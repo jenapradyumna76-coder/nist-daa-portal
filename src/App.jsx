@@ -214,21 +214,33 @@ export default function App() {
     if (
       !m1_name.trim() || !m1_roll.trim() ||
       !m2_name.trim() || !m2_roll.trim() ||
-      !m3_name.trim() || !m3_roll.trim() ||
       !topic.trim()
     ) {
-      setSubmitError('Please fill in all member names, roll numbers, and select a presentation topic.');
+      setSubmitError('Please fill in Member 1, Member 2, and select a presentation topic.');
       return;
     }
 
-    const rolls = [m1_roll.trim().toUpperCase(), m2_roll.trim().toUpperCase(), m3_roll.trim().toUpperCase()];
-    if (new Set(rolls).size !== 3) {
+    const hasM3Name = Boolean(m3_name.trim());
+    const hasM3Roll = Boolean(m3_roll.trim());
+    if (hasM3Name !== hasM3Roll) {
+      setSubmitError('Please fill in both name and roll number for Member 3, or leave both empty.');
+      return;
+    }
+
+    const rolls = [m1_roll.trim().toUpperCase(), m2_roll.trim().toUpperCase()];
+    if (hasM3Roll) {
+      rolls.push(m3_roll.trim().toUpperCase());
+    }
+    if (new Set(rolls).size !== rolls.length) {
       setSubmitError('Duplicate roll numbers detected within your group.');
       return;
     }
 
-    const names = [m1_name.trim().toLowerCase(), m2_name.trim().toLowerCase(), m3_name.trim().toLowerCase()];
-    if (new Set(names).size !== 3) {
+    const names = [m1_name.trim().toLowerCase(), m2_name.trim().toLowerCase()];
+    if (hasM3Name) {
+      names.push(m3_name.trim().toLowerCase());
+    }
+    if (new Set(names).size !== names.length) {
       setSubmitError('Duplicate member names detected within your group.');
       return;
     }
@@ -270,8 +282,8 @@ export default function App() {
         m1_roll: m1_roll.trim().toUpperCase(),
         m2_name: m2_name.trim(),
         m2_roll: m2_roll.trim().toUpperCase(),
-        m3_name: m3_name.trim(),
-        m3_roll: m3_roll.trim().toUpperCase(),
+        m3_name: m3_name.trim() || '',
+        m3_roll: m3_roll.trim().toUpperCase() || '',
         topic: topic.trim(),
         section: 'CSE - Section A',
         semester: '3rd Semester',
@@ -453,7 +465,7 @@ export default function App() {
                 <CheckCircle className="w-10 h-10 sm:w-12 sm:h-12 mx-auto mb-3 text-emerald-600" />
                 <h2 className="text-lg sm:text-xl font-bold">Group Successfully Registered</h2>
                 <p className="text-xs sm:text-sm text-emerald-700 mt-2">
-                  Your 3-member team and presentation topic have been confirmed and locked.
+                  Your group and presentation topic have been confirmed and locked.
                 </p>
                 <button
                   onClick={() => setSubmitSuccess(false)}
@@ -548,34 +560,35 @@ export default function App() {
 
                   {/* Member 3 */}
                   <div className="mb-4 sm:mb-5 bg-slate-50 p-3 sm:p-4 rounded-md border border-slate-200">
-                    <h3 className="text-xs sm:text-sm font-bold text-blue-900 mb-2 sm:mb-3">MEMBER 3</h3>
+                    <div className="flex items-center justify-between mb-2 sm:mb-3">
+                      <h3 className="text-xs sm:text-sm font-bold text-blue-900">MEMBER 3</h3>
+                      <span className="text-[10px] sm:text-xs font-semibold text-slate-500 bg-slate-200/80 px-2 py-0.5 rounded">Optional</span>
+                    </div>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 sm:gap-3">
                       <div>
                         <label className="block text-[11px] sm:text-xs font-semibold text-slate-600 mb-1">
-                          Full Name *
+                          Full Name
                         </label>
                         <input
                           type="text"
                           name="m3_name"
                           value={formData.m3_name}
                           onChange={handleFormChange}
-                          placeholder="Full Name"
+                          placeholder="Full Name (Optional)"
                           className="w-full px-3 py-2 text-base sm:text-sm bg-white border border-slate-300 rounded focus:ring-1 focus:ring-blue-600 outline-none"
-                          required
                         />
                       </div>
                       <div>
                         <label className="block text-[11px] sm:text-xs font-semibold text-slate-600 mb-1">
-                          Roll Number *
+                          Roll Number
                         </label>
                         <input
                           type="text"
                           name="m3_roll"
                           value={formData.m3_roll}
                           onChange={handleFormChange}
-                          placeholder="Roll Number"
+                          placeholder="Roll Number (Optional)"
                           className="w-full px-3 py-2 text-base sm:text-sm bg-white border border-slate-300 rounded focus:ring-1 focus:ring-blue-600 outline-none"
-                          required
                         />
                       </div>
                     </div>
@@ -773,8 +786,8 @@ export default function App() {
                               </div>
                               <div className="bg-slate-50 p-2.5 rounded border border-slate-200">
                                 <div className="text-slate-400 font-semibold mb-1 text-[11px]">MEMBER 3</div>
-                                <div className="font-bold text-slate-800">{g.m3_name}</div>
-                                <div className="text-slate-600">{g.m3_roll}</div>
+                                <div className="font-bold text-slate-800">{g.m3_name || '—'}</div>
+                                <div className="text-slate-600">{g.m3_roll || 'N/A'}</div>
                               </div>
                             </div>
 
