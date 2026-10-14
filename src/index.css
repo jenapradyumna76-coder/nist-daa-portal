@@ -1,10 +1,13 @@
-@import "tailwindcss";
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
 
 @media print {
   .no-print {
     display: none !important;
   }
   body {
-    background: #ffffff !important;
+    background-color: white !important;
+    color: black !important;
   }
 }

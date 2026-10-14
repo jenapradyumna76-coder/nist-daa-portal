@@ -1,974 +1,639 @@
 import React, { useState, useEffect } from 'react';
-import { initializeApp, getApps } from 'firebase/app';
-import {
-  getFirestore,
-  collection,
-  doc,
-  setDoc,
-  deleteDoc,
-  onSnapshot,
-  query,
-  orderBy
-} from 'firebase/firestore';
-import {
-  Search,
-  Download,
-  Printer,
-  Trash2,
-  Lock,
-  Unlock,
-  Plus,
-  Edit2,
-  CheckCircle,
-  AlertCircle,
-  LogOut
+import { 
+  Users, 
+  ShieldCheck, 
+  Search, 
+  Printer, 
+  Download, 
+  Trash2, 
+  CheckCircle2, 
+  AlertCircle, 
+  KeyRound,
+  LogOut,
+  UserPlus
 } from 'lucide-react';
+import { initializeApp } from 'firebase/app';
+import { 
+  getFirestore, 
+  collection, 
+  onSnapshot, 
+  addDoc, 
+  deleteDoc, 
+  doc, 
+  query, 
+  orderBy 
+} from 'firebase/firestore';
 
-// Live Firebase Configuration for nist-daa-project
+// ---------------------------------------------------------
+// FIREBASE CONFIGURATION
+// ---------------------------------------------------------
 const firebaseConfig = {
   apiKey: "AIzaSyAl4V0az5s3WqXEtGmsxqjwUveh84XdM2Q",
   authDomain: "nist-daa-project.firebaseapp.com",
   projectId: "nist-daa-project",
-  storageBucket: "nist-daa-project.firebasestorage.app",
-  messagingSenderId: "1083024626418",
-  appId: "1:1083024626418:web:f3e53b3f0c07802ac3f66b",
-  measurementId: "G-5SBKBK2N8T"
+  storageBucket: "nist-daa-project.appspot.com",
+  messagingSenderId: "1028308462001",
+  appId: "1:1028308462001:web:5830b501d5ce3902316e25"
 };
 
-const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApps()[0];
+const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
-const DEFAULT_SYLLABUS = [
-  // Module-I
-  { id: 'm1_1', module: 'Module-I', title: 'Introduction to problems and algorithms' },
-  { id: 'm1_2', module: 'Module-I', title: 'Mathematics for algorithm analysis' },
-  { id: 'm1_3', module: 'Module-I', title: 'Insertion sort & Analysing algorithms' },
-  { id: 'm1_4', module: 'Module-I', title: 'Designing of algorithms' },
-  { id: 'm1_5', module: 'Module-I', title: 'Asymptotic notation, Standard notations and common functions' },
-  { id: 'm1_6', module: 'Module-I', title: 'Recurrence relations' },
-  { id: 'm1_7', module: 'Module-I', title: 'The substitution method' },
-  { id: 'm1_8', module: 'Module-I', title: 'The recursion-tree method' },
-  { id: 'm1_9', module: 'Module-I', title: 'The master method' },
-  { id: 'm1_10', module: 'Module-I', title: 'Divide and conquer: Min-Max Heap' },
-  { id: 'm1_11', module: 'Module-I', title: 'Heapsort' },
-  { id: 'm1_12', module: 'Module-I', title: 'Quicksort' },
-  { id: 'm1_13', module: 'Module-I', title: 'Merge Sort' },
-  { id: 'm1_14', module: 'Module-I', title: 'Sorting in Linear Time: Lower bounds for sorting & Counting sort' },
-
-  // Module-II
-  { id: 'm2_1', module: 'Module-II', title: 'Greedy method: Elements of the greedy strategy' },
-  { id: 'm2_2', module: 'Module-II', title: 'Huffman codes' },
-  { id: 'm2_3', module: 'Module-II', title: 'Fractional Knapsack problem' },
-  { id: 'm2_4', module: 'Module-II', title: 'Dynamic programming: Assembly-line Scheduling' },
-  { id: 'm2_5', module: 'Module-II', title: 'Matrix-Chain Multiplication' },
-  { id: 'm2_6', module: 'Module-II', title: 'Longest Common Subsequence (LCS)' },
-  { id: 'm2_7', module: 'Module-II', title: '0/1 Knapsack problem' },
-
-  // Module-III
-  { id: 'm3_1', module: 'Module-III', title: 'Graph algorithms: Basic Definitions and Application' },
-  { id: 'm3_2', module: 'Module-III', title: 'Representations of graphs' },
-  { id: 'm3_3', module: 'Module-III', title: 'Breadth-first search (BFS) & Depth-first search (DFS)' },
-  { id: 'm3_4', module: 'Module-III', title: 'Data Structures for Disjoint Sets' },
-  { id: 'm3_5', module: 'Module-III', title: 'Strongly connected components' },
-  { id: 'm3_6', module: 'Module-III', title: "Minimum Spanning Trees: Kruskal's algorithm" },
-  { id: 'm3_7', module: 'Module-III', title: "Minimum Spanning Trees: Prim's algorithm" },
-  { id: 'm3_8', module: 'Module-III', title: 'Single-Source Shortest Paths: The Bellman-Ford algorithm' },
-  { id: 'm3_9', module: 'Module-III', title: "Single-Source Shortest Paths: Dijkstra's algorithm" },
-  { id: 'm3_10', module: 'Module-III', title: 'All-Pairs Shortest Paths algorithm' },
-
-  // Module-IV
-  { id: 'm4_1', module: 'Module-IV', title: 'String Matching: The naive string-matching algorithm' },
-  { id: 'm4_2', module: 'Module-IV', title: 'String Matching: The Rabin-Karp algorithm' },
-  { id: 'm4_3', module: 'Module-IV', title: 'String Matching: The Knuth-Morris-Pratt algorithm' },
-  { id: 'm4_4', module: 'Module-IV', title: 'Network Flow: Flow networks & Ford-Fulkerson method' },
-  { id: 'm4_5', module: 'Module-IV', title: 'Backtracking: n-Queen problem' },
-  { id: 'm4_6', module: 'Module-IV', title: 'Backtracking: Hamiltonian Circuit Problem' },
-  { id: 'm4_7', module: 'Module-IV', title: 'Backtracking: Subset Sum Problem' },
-  { id: 'm4_8', module: 'Module-IV', title: 'NP-Completeness: Classes P and NP, NP-complete problems' }
+// ---------------------------------------------------------
+// MASTER TOPICS (DAA Syllabus)
+// ---------------------------------------------------------
+const ALL_TOPICS = [
+  "Asymptotic notation, Standard notations and common functions",
+  "Greedy method",
+  "Matrix-Chain Multiplication",
+  "0/1 Knapsack problem",
+  "Counting sort",
+  "Huffman coding",
+  "Recurrence relations",
+  "Fractional Knapsack problem",
+  "String Matching: The Rabin-Karp algorithm",
+  "Longest Common Subsequence (LCS)",
+  "Quicksort",
+  "Insertion sort",
+  "Merge Sort",
+  "Breadth-first search (BFS) & Depth-first search (DFS)",
+  "All-Pairs Shortest Paths algorithm",
+  "Heapsort",
+  "Dijkstra's Algorithm & Single-Source Shortest Paths",
+  "Bellman-Ford Algorithm",
+  "Floyd-Warshall Algorithm",
+  "Minimum Spanning Trees: Kruskal's Algorithm",
+  "Minimum Spanning Trees: Prim's Algorithm",
+  "Dynamic Programming: Bellman Equation & Optimal Substructure",
+  "Backtracking: N-Queens Problem",
+  "Branch and Bound: Traveling Salesperson Problem"
 ];
 
 export default function App() {
-  const [activeTab, setActiveTab] = useState('register');
-  const [isOrganiserAuth, setIsOrganiserAuth] = useState(false);
+  const [activeTab, setActiveTab] = useState('register'); // 'register' | 'organiser'
+  
+  // Organiser State
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [securityKeyInput, setSecurityKeyInput] = useState('');
   const [authError, setAuthError] = useState('');
 
-  const [isAcceptingResponses, setIsAcceptingResponses] = useState(true);
+  // Groups Data (Synced live with Firestore)
   const [groups, setGroups] = useState([]);
-  const [topics, setTopics] = useState(DEFAULT_SYLLABUS);
-  const [organiserSubTab, setOrganiserSubTab] = useState('groups');
-
-  const [formData, setFormData] = useState({
-    m1_name: '',
-    m1_roll: '',
-    m2_name: '',
-    m2_roll: '',
-    m3_name: '',
-    m3_roll: '',
-    topic: ''
-  });
-
-  const [submitError, setSubmitError] = useState('');
-  const [submitSuccess, setSubmitSuccess] = useState(false);
-  const [isSubmitting, setIsSubmitting] = useState(false);
-
   const [searchTerm, setSearchTerm] = useState('');
   const [groupToDelete, setGroupToDelete] = useState(null);
 
-  const [newTopic, setNewTopic] = useState({ module: 'Module-I', title: '' });
-  const [editingTopic, setEditingTopic] = useState(null);
-  const [topicToDelete, setTopicToDelete] = useState(null);
+  // Dynamic Team Size & Form State
+  const [teamSize, setTeamSize] = useState('3');
+  const [formData, setFormData] = useState({
+    m1_name: '', m1_roll: '',
+    m2_name: '', m2_roll: '',
+    m3_name: '', m3_roll: '',
+    m4_name: '', m4_roll: '',
+    topic: ''
+  });
+  const [formStatus, setFormStatus] = useState({ type: '', message: '' });
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // Real-time Firestore sync
+  // Direct Live Firestore Listener with LocalStorage Cache Fallback
   useEffect(() => {
-    const unsubSettings = onSnapshot(
-      doc(db, 'portal_settings', 'status'),
-      (snap) => {
-        if (snap.exists()) {
-          setIsAcceptingResponses(snap.data().isAccepting ?? true);
-        }
-      },
-      (err) => console.error('Settings listener error:', err)
-    );
+    const q = query(collection(db, "groups"), orderBy("createdAt", "asc"));
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      const fetched = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      setGroups(fetched);
+      localStorage.setItem('nist_daa_groups', JSON.stringify(fetched));
+    }, (err) => {
+      console.warn("Firestore error, loading cached data:", err);
+      const local = localStorage.getItem('nist_daa_groups');
+      if (local) setGroups(JSON.parse(local));
+    });
 
-    const groupsQuery = query(collection(db, 'daa_groups'), orderBy('createdAt', 'desc'));
-    const unsubGroups = onSnapshot(
-      groupsQuery,
-      (snapshot) => {
-        const list = [];
-        snapshot.forEach((docSnap) => {
-          list.push({ id: docSnap.id, ...docSnap.data() });
-        });
-        setGroups(list);
-      },
-      (err) => console.error('Groups listener error:', err)
-    );
-
-    const unsubTopics = onSnapshot(
-      collection(db, 'daa_topics'),
-      (snapshot) => {
-        if (!snapshot.empty) {
-          const list = [];
-          snapshot.forEach((docSnap) => {
-            list.push({ id: docSnap.id, ...docSnap.data() });
-          });
-          setTopics(list);
-        } else {
-          setTopics(DEFAULT_SYLLABUS);
-        }
-      },
-      (err) => console.error('Topics listener error:', err)
-    );
-
-    return () => {
-      unsubSettings();
-      unsubGroups();
-      unsubTopics();
-    };
+    return () => unsubscribe();
   }, []);
 
-  const claimedTopicTitles = groups.map((g) => g.topic?.trim().toLowerCase());
-  const availableTopics = topics.filter(
-    (t) => !claimedTopicTitles.includes(t.title?.trim().toLowerCase())
+  // Compute availability from live groups
+  const registeredTopics = new Set(groups.map(g => g.topic));
+  const availableTopics = ALL_TOPICS.filter(t => !registeredTopics.has(t));
+  const registeredRolls = new Set(
+    groups.flatMap(g => [g.m1_roll, g.m2_roll, g.m3_roll, g.m4_roll].filter(Boolean).map(r => r.trim()))
   );
 
-  const modules = ['Module-I', 'Module-II', 'Module-III', 'Module-IV'];
+  // Handle Team Size Dropdown Change
+  const handleTeamSizeChange = (e) => {
+    const size = e.target.value;
+    setTeamSize(size);
+    if (size === '3') {
+      setFormData(prev => ({
+        ...prev,
+        m4_name: '',
+        m4_roll: ''
+      }));
+    }
+  };
 
-  const handleAuthSubmit = (e) => {
+  // Organiser Login
+  const handleLogin = (e) => {
     e.preventDefault();
-    if (securityKeyInput === 'nistcse') {
-      setIsOrganiserAuth(true);
+    if (securityKeyInput.trim() === 'nistcse') {
+      setIsAuthenticated(true);
       setAuthError('');
       setSecurityKeyInput('');
     } else {
-      setAuthError('Invalid Security Key.');
+      setAuthError('Invalid Security Key! Please try again.');
     }
   };
 
-  const handleToggleResponses = async () => {
-    try {
-      const newStatus = !isAcceptingResponses;
-      await setDoc(doc(db, 'portal_settings', 'status'), { isAccepting: newStatus }, { merge: true });
-    } catch (err) {
-      alert('Failed to update response state: ' + err.message);
-    }
-  };
-
-  const handleFormChange = (e) => {
-    const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
-    setSubmitError('');
-  };
-
-  const handleStudentSubmit = async (e) => {
+  // Submit Registration Form
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    setSubmitError('');
-
-    if (!isAcceptingResponses) {
-      setSubmitError('Registration is currently closed by the organiser.');
-      return;
-    }
-
-    const { m1_name, m1_roll, m2_name, m2_roll, m3_name, m3_roll, topic } = formData;
+    setFormStatus({ type: '', message: '' });
 
     if (
-      !m1_name.trim() || !m1_roll.trim() ||
-      !m2_name.trim() || !m2_roll.trim() ||
-      !m3_name.trim() || !m3_roll.trim() ||
-      !topic.trim()
+      !formData.m1_name.trim() || !formData.m1_roll.trim() ||
+      !formData.m2_name.trim() || !formData.m2_roll.trim() ||
+      !formData.m3_name.trim() || !formData.m3_roll.trim() ||
+      !formData.topic.trim()
     ) {
-      setSubmitError('Please fill in all member names, roll numbers, and select a presentation topic.');
+      setFormStatus({ type: 'error', message: 'Please fill in all details for Members 1, 2, 3 and select a topic.' });
       return;
     }
 
-    const rolls = [m1_roll.trim().toUpperCase(), m2_roll.trim().toUpperCase(), m3_roll.trim().toUpperCase()];
-    if (new Set(rolls).size !== 3) {
-      setSubmitError('Duplicate roll numbers detected within your group.');
-      return;
-    }
-
-    const names = [m1_name.trim().toLowerCase(), m2_name.trim().toLowerCase(), m3_name.trim().toLowerCase()];
-    if (new Set(names).size !== 3) {
-      setSubmitError('Duplicate member names detected within your group.');
-      return;
-    }
-
-    const registeredRolls = new Set();
-    const registeredNames = new Set();
-    const registeredTopics = new Set();
-
-    groups.forEach((g) => {
-      [g.m1_roll, g.m2_roll, g.m3_roll].forEach((r) => r && registeredRolls.add(r.trim().toUpperCase()));
-      [g.m1_name, g.m2_name, g.m3_name].forEach((n) => n && registeredNames.add(n.trim().toLowerCase()));
-      if (g.topic) registeredTopics.add(g.topic.trim().toLowerCase());
-    });
-
-    for (let r of rolls) {
-      if (registeredRolls.has(r)) {
-        setSubmitError(`Roll Number "${r}" is already registered in another group.`);
+    if (teamSize === '4') {
+      if (!formData.m4_name.trim() || !formData.m4_roll.trim()) {
+        setFormStatus({ type: 'error', message: 'Please enter Member 4 details.' });
         return;
       }
     }
 
-    for (let n of names) {
-      if (registeredNames.has(n)) {
-        setSubmitError(`Student Name "${n}" is already registered in another group.`);
+    const currentRolls = [
+      formData.m1_roll.trim(),
+      formData.m2_roll.trim(),
+      formData.m3_roll.trim()
+    ];
+    if (teamSize === '4') {
+      currentRolls.push(formData.m4_roll.trim());
+    }
+
+    // Check intra-team duplicates
+    if (new Set(currentRolls).size !== currentRolls.length) {
+      setFormStatus({ type: 'error', message: 'Duplicate roll numbers detected inside the group.' });
+      return;
+    }
+
+    // Check duplicate registrations against database
+    for (const roll of currentRolls) {
+      if (registeredRolls.has(roll)) {
+        setFormStatus({ type: 'error', message: `Roll number ${roll} is already registered in another group.` });
         return;
       }
     }
 
-    if (registeredTopics.has(topic.trim().toLowerCase())) {
-      setSubmitError('This topic has already been claimed by another group. Please choose another.');
+    if (registeredTopics.has(formData.topic)) {
+      setFormStatus({ type: 'error', message: 'This topic has just been selected by another group. Choose another topic.' });
       return;
     }
 
     setIsSubmitting(true);
-    try {
-      const docId = `group_${Date.now()}`;
-      await setDoc(doc(db, 'daa_groups', docId), {
-        m1_name: m1_name.trim(),
-        m1_roll: m1_roll.trim().toUpperCase(),
-        m2_name: m2_name.trim(),
-        m2_roll: m2_roll.trim().toUpperCase(),
-        m3_name: m3_name.trim(),
-        m3_roll: m3_roll.trim().toUpperCase(),
-        topic: topic.trim(),
-        section: 'CSE - Section A',
-        semester: '3rd Semester',
-        createdAt: new Date().toISOString()
-      });
+    const newGroup = {
+      teamSize: Number(teamSize),
+      m1_name: formData.m1_name.trim(),
+      m1_roll: formData.m1_roll.trim(),
+      m2_name: formData.m2_name.trim(),
+      m2_roll: formData.m2_roll.trim(),
+      m3_name: formData.m3_name.trim(),
+      m3_roll: formData.m3_roll.trim(),
+      m4_name: teamSize === '4' ? formData.m4_name.trim() : '',
+      m4_roll: teamSize === '4' ? formData.m4_roll.trim() : '',
+      topic: formData.topic.trim(),
+      createdAt: new Date().toISOString()
+    };
 
-      setSubmitSuccess(true);
+    try {
+      await addDoc(collection(db, "groups"), newGroup);
+      setFormStatus({ type: 'success', message: 'Team registered successfully! Topic locked.' });
       setFormData({
-        m1_name: '',
-        m1_roll: '',
-        m2_name: '',
-        m2_roll: '',
-        m3_name: '',
-        m3_roll: '',
+        m1_name: '', m1_roll: '',
+        m2_name: '', m2_roll: '',
+        m3_name: '', m3_roll: '',
+        m4_name: '', m4_roll: '',
         topic: ''
       });
+      setTeamSize('3');
     } catch (err) {
-      setSubmitError('Submission failed: ' + err.message);
-    } finally {
-      setIsSubmitting(false);
+      console.error("Firestore write failed:", err);
+      setFormStatus({ type: 'error', message: 'Failed to save to database. Please check your internet connection.' });
     }
+    setIsSubmitting(false);
   };
 
+  // Delete Group
   const confirmDeleteGroup = async () => {
     if (!groupToDelete) return;
     try {
-      await deleteDoc(doc(db, 'daa_groups', groupToDelete.id));
-      setGroupToDelete(null);
+      await deleteDoc(doc(db, "groups", groupToDelete.id));
     } catch (err) {
-      alert('Delete failed: ' + err.message);
+      console.error("Delete failed:", err);
     }
+    setGroupToDelete(null);
   };
 
-  const handleAddTopic = async (e) => {
-    e.preventDefault();
-    if (!newTopic.title.trim()) return;
-    try {
-      const docId = `topic_${Date.now()}`;
-      await setDoc(doc(db, 'daa_topics', docId), {
-        title: newTopic.title.trim(),
-        module: newTopic.module
-      });
-      setNewTopic({ module: 'Module-I', title: '' });
-    } catch (err) {
-      alert('Failed to add topic: ' + err.message);
-    }
-  };
-
-  const handleUpdateTopic = async (e) => {
-    e.preventDefault();
-    if (!editingTopic || !editingTopic.title.trim()) return;
-    try {
-      await setDoc(
-        doc(db, 'daa_topics', editingTopic.id),
-        { title: editingTopic.title.trim(), module: editingTopic.module },
-        { merge: true }
-      );
-      setEditingTopic(null);
-    } catch (err) {
-      alert('Failed to update topic: ' + err.message);
-    }
-  };
-
-  const confirmDeleteTopic = async () => {
-    if (!topicToDelete) return;
-    try {
-      await deleteDoc(doc(db, 'daa_topics', topicToDelete.id));
-      setTopicToDelete(null);
-    } catch (err) {
-      alert('Failed to delete topic: ' + err.message);
-    }
-  };
-
+  // Export CSV
   const handleExportCSV = () => {
-    if (groups.length === 0) {
-      alert('No groups registered yet.');
-      return;
-    }
-    const headers = ['Group', 'Member 1 Name', 'Member 1 Roll', 'Member 2 Name', 'Member 2 Roll', 'Member 3 Name', 'Member 3 Roll', 'Topic', 'Section', 'Semester', 'Submission Time'];
+    const headers = ["Group No", "Team Size", "Member 1 Name", "Member 1 Roll", "Member 2 Name", "Member 2 Roll", "Member 3 Name", "Member 3 Roll", "Member 4 Name", "Member 4 Roll", "Topic"];
     const rows = groups.map((g, idx) => [
       `Group ${idx + 1}`,
-      `"${g.m1_name || ''}"`,
-      `"${g.m1_roll || ''}"`,
-      `"${g.m2_name || ''}"`,
-      `"${g.m2_roll || ''}"`,
-      `"${g.m3_name || ''}"`,
-      `"${g.m3_roll || ''}"`,
-      `"${(g.topic || '').replace(/"/g, '""')}"`,
-      `"CSE - Section A"`,
-      `"3rd Semester"`,
-      `"${g.createdAt ? new Date(g.createdAt).toLocaleString() : ''}"`
+      g.teamSize || (g.m4_name ? 4 : 3),
+      `"${g.m1_name}"`, g.m1_roll,
+      `"${g.m2_name}"`, g.m2_roll,
+      `"${g.m3_name}"`, g.m3_roll,
+      `"${g.m4_name || ''}"`, g.m4_roll || '',
+      `"${g.topic}"`
     ]);
-
-    const csvContent = [headers.join(','), ...rows.map((r) => r.join(','))].join('\n');
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = `DAA_Groups_SectionA_3rdSem_${new Date().toISOString().slice(0, 10)}.csv`;
+    const csvContent = "data:text/csv;charset=utf-8," + [headers.join(","), ...rows.map(e => e.join(","))].join("\n");
+    const link = document.createElement("a");
+    link.setAttribute("href", encodeURI(csvContent));
+    link.setAttribute("download", "DAA_Registered_Groups.csv");
+    document.body.appendChild(link);
     link.click();
-    URL.revokeObjectURL(url);
+    document.body.removeChild(link);
   };
 
-  const filteredGroups = groups.filter((g) => {
-    const s = searchTerm.toLowerCase();
+  // Filter groups
+  const filteredGroups = groups.filter(g => {
+    const term = searchTerm.toLowerCase();
     return (
-      g.m1_name?.toLowerCase().includes(s) ||
-      g.m1_roll?.toLowerCase().includes(s) ||
-      g.m2_name?.toLowerCase().includes(s) ||
-      g.m2_roll?.toLowerCase().includes(s) ||
-      g.m3_name?.toLowerCase().includes(s) ||
-      g.m3_roll?.toLowerCase().includes(s) ||
-      g.topic?.toLowerCase().includes(s)
+      g.topic?.toLowerCase().includes(term) ||
+      g.m1_name?.toLowerCase().includes(term) || g.m1_roll?.includes(term) ||
+      g.m2_name?.toLowerCase().includes(term) || g.m2_roll?.includes(term) ||
+      g.m3_name?.toLowerCase().includes(term) || g.m3_roll?.includes(term) ||
+      (g.m4_name && g.m4_name.toLowerCase().includes(term)) ||
+      (g.m4_roll && g.m4_roll.includes(term))
     );
   });
 
   return (
-    <div className="min-h-screen bg-slate-50 text-slate-800 flex flex-col font-sans">
-      {/* Header Banner */}
-      <header className="bg-white border-b border-slate-200 py-4 sm:py-6 px-3 sm:px-4 shadow-sm">
-        <div className="max-w-4xl mx-auto flex flex-col items-center justify-center text-center">
-          <div className="flex flex-wrap items-center justify-center gap-2 sm:gap-3">
-            <span className="text-2xl sm:text-3xl md:text-4xl font-serif font-black tracking-tight text-[#002FA7]">
-              NIST
-            </span>
-            <span className="text-2xl sm:text-3xl md:text-4xl font-serif font-bold tracking-widest text-slate-900">
-              UNIVERSITY
-            </span>
-          </div>
-          <p className="mt-1 sm:mt-2 text-xs sm:text-sm md:text-base font-medium text-slate-600 leading-snug px-2">
-            Department of Computer Science & Engineering • CSE - Section A • 3rd Semester
-          </p>
-        </div>
-      </header>
+    <div className="min-h-screen bg-slate-100 text-slate-800 font-sans">
+      {/* ---------------- INSTITUTIONAL HEADER (FOR PDF / PRINT) ---------------- */}
+      <div className="hidden print:block text-center pb-4 mb-4 border-b border-slate-300">
+        <h1 className="text-xl font-bold text-blue-900 tracking-wide uppercase">NIST UNIVERSITY</h1>
+        <p className="text-sm font-semibold text-slate-800">Department of Computer Science & Engineering</p>
+        <p className="text-xs text-slate-600">3rd Semester, CSE - A</p>
+        <h2 className="text-sm font-bold text-slate-900 mt-2 uppercase tracking-wider">DAA Presentation Group Details</h2>
+      </div>
 
-      {/* Navigation Bar */}
-      <nav className="no-print bg-slate-100 border-b border-slate-200">
-        <div className="max-w-4xl mx-auto flex items-center justify-center sm:justify-start px-2 sm:px-4">
-          <div className="flex w-full sm:w-auto">
+      {/* ---------------- NAVIGATION BAR ---------------- */}
+      <header className="no-print bg-white border-b border-slate-200 sticky top-0 z-40 shadow-sm">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 flex items-center justify-between h-16">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-lg bg-blue-700 flex items-center justify-center text-white font-bold text-lg shadow-sm">
+              DAA
+            </div>
+            <div>
+              <h1 className="text-base font-bold text-slate-900 leading-tight">NIST University</h1>
+              <p className="text-xs text-slate-500 font-medium">CSE - Section A | 3rd Semester</p>
+            </div>
+          </div>
+
+          <nav className="flex items-center gap-2">
             <button
               onClick={() => setActiveTab('register')}
-              className={`flex-1 sm:flex-initial py-2.5 sm:py-3 px-3 sm:px-4 text-xs sm:text-sm font-semibold border-b-2 text-center transition-colors cursor-pointer ${
-                activeTab === 'register'
-                  ? 'border-blue-600 text-blue-600 bg-white'
-                  : 'border-transparent text-slate-600 hover:text-slate-900'
+              className={`px-3 py-1.5 text-xs font-semibold rounded-md flex items-center gap-1.5 transition-colors cursor-pointer ${
+                activeTab === 'register' 
+                  ? 'bg-blue-50 text-blue-700 border border-blue-200' 
+                  : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
               }`}
             >
-              Student Registration
+              <UserPlus className="w-4 h-4" /> Register Team
             </button>
             <button
               onClick={() => setActiveTab('organiser')}
-              className={`flex-1 sm:flex-initial py-2.5 sm:py-3 px-3 sm:px-4 text-xs sm:text-sm font-semibold border-b-2 text-center transition-colors cursor-pointer ${
-                activeTab === 'organiser'
-                  ? 'border-blue-600 text-blue-600 bg-white'
-                  : 'border-transparent text-slate-600 hover:text-slate-900'
+              className={`px-3 py-1.5 text-xs font-semibold rounded-md flex items-center gap-1.5 transition-colors cursor-pointer ${
+                activeTab === 'organiser' 
+                  ? 'bg-blue-50 text-blue-700 border border-blue-200' 
+                  : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
               }`}
             >
-              Organiser Portal
+              <ShieldCheck className="w-4 h-4" /> Organiser Portal
             </button>
-          </div>
+          </nav>
         </div>
-      </nav>
+      </header>
 
-      {/* Main Container */}
-      <main className="flex-1 max-w-4xl w-full mx-auto p-3 sm:p-4 md:p-6">
-        {/* STUDENT REGISTRATION TAB */}
+      {/* ---------------- MAIN CONTAINER ---------------- */}
+      <main className="max-w-6xl mx-auto p-4 sm:p-6 print:p-0">
+        
+        {/* ================= REGISTER VIEW ================= */}
         {activeTab === 'register' && (
           <div className="max-w-2xl mx-auto">
-            {!isAcceptingResponses ? (
-              <div className="bg-amber-50 border border-amber-300 rounded-lg p-5 sm:p-6 text-center text-amber-800 my-4 sm:my-8">
-                <AlertCircle className="w-9 h-9 sm:w-10 sm:h-10 mx-auto mb-2 text-amber-600" />
-                <h3 className="text-base sm:text-lg font-bold">Registration Closed</h3>
-                <p className="text-xs sm:text-sm mt-1">
-                  Registration is currently closed by the organiser. Submissions are not being accepted at this time.
+            <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-5 sm:p-7">
+              <div className="border-b border-slate-100 pb-4 mb-5">
+                <h2 className="text-lg font-bold text-slate-900 flex items-center gap-2">
+                  <Users className="w-5 h-5 text-blue-700" /> DAA Presentation Team Registration
+                </h2>
+                <p className="text-xs text-slate-500 mt-1">
+                  Choose your team size (3 or 4), fill in the member details, and select an available presentation topic.
                 </p>
               </div>
-            ) : submitSuccess ? (
-              <div className="bg-emerald-50 border border-emerald-300 rounded-lg p-6 sm:p-8 text-center text-emerald-900 my-4 sm:my-8">
-                <CheckCircle className="w-10 h-10 sm:w-12 sm:h-12 mx-auto mb-3 text-emerald-600" />
-                <h2 className="text-lg sm:text-xl font-bold">Group Successfully Registered</h2>
-                <p className="text-xs sm:text-sm text-emerald-700 mt-2">
-                  Your 3-member team and presentation topic have been confirmed and locked.
-                </p>
-                <button
-                  onClick={() => setSubmitSuccess(false)}
-                  className="mt-5 sm:mt-6 w-full sm:w-auto px-4 py-2.5 bg-emerald-600 text-white rounded-md text-xs sm:text-sm font-medium hover:bg-emerald-700 transition cursor-pointer"
-                >
-                  Register Another Group
-                </button>
-              </div>
-            ) : (
-              <form onSubmit={handleStudentSubmit} className="space-y-4 sm:space-y-6">
-                <div className="bg-white border border-slate-200 rounded-lg p-4 sm:p-5 shadow-sm">
-                  <h2 className="text-base sm:text-lg font-bold text-slate-800 mb-3 sm:mb-4 border-b pb-2">
-                    DAA Presentation Group Registration
-                  </h2>
 
-                  {submitError && (
-                    <div className="mb-4 p-3 bg-rose-50 border border-rose-200 text-rose-700 rounded text-xs sm:text-sm flex items-start gap-2">
-                      <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
-                      <span>{submitError}</span>
-                    </div>
-                  )}
-
-                  {/* Member 1 */}
-                  <div className="mb-4 sm:mb-5 bg-slate-50 p-3 sm:p-4 rounded-md border border-slate-200">
-                    <h3 className="text-xs sm:text-sm font-bold text-blue-900 mb-2 sm:mb-3">MEMBER 1</h3>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 sm:gap-3">
-                      <div>
-                        <label className="block text-[11px] sm:text-xs font-semibold text-slate-600 mb-1">
-                          Full Name *
-                        </label>
-                        <input
-                          type="text"
-                          name="m1_name"
-                          value={formData.m1_name}
-                          onChange={handleFormChange}
-                          placeholder="Full Name"
-                          className="w-full px-3 py-2 text-base sm:text-sm bg-white border border-slate-300 rounded focus:ring-1 focus:ring-blue-600 outline-none"
-                          required
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-[11px] sm:text-xs font-semibold text-slate-600 mb-1">
-                          Roll Number *
-                        </label>
-                        <input
-                          type="text"
-                          name="m1_roll"
-                          value={formData.m1_roll}
-                          onChange={handleFormChange}
-                          placeholder="Roll Number"
-                          className="w-full px-3 py-2 text-base sm:text-sm bg-white border border-slate-300 rounded focus:ring-1 focus:ring-blue-600 outline-none"
-                          required
-                        />
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Member 2 */}
-                  <div className="mb-4 sm:mb-5 bg-slate-50 p-3 sm:p-4 rounded-md border border-slate-200">
-                    <h3 className="text-xs sm:text-sm font-bold text-blue-900 mb-2 sm:mb-3">MEMBER 2</h3>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 sm:gap-3">
-                      <div>
-                        <label className="block text-[11px] sm:text-xs font-semibold text-slate-600 mb-1">
-                          Full Name *
-                        </label>
-                        <input
-                          type="text"
-                          name="m2_name"
-                          value={formData.m2_name}
-                          onChange={handleFormChange}
-                          placeholder="Full Name"
-                          className="w-full px-3 py-2 text-base sm:text-sm bg-white border border-slate-300 rounded focus:ring-1 focus:ring-blue-600 outline-none"
-                          required
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-[11px] sm:text-xs font-semibold text-slate-600 mb-1">
-                          Roll Number *
-                        </label>
-                        <input
-                          type="text"
-                          name="m2_roll"
-                          value={formData.m2_roll}
-                          onChange={handleFormChange}
-                          placeholder="Roll Number"
-                          className="w-full px-3 py-2 text-base sm:text-sm bg-white border border-slate-300 rounded focus:ring-1 focus:ring-blue-600 outline-none"
-                          required
-                        />
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Member 3 */}
-                  <div className="mb-4 sm:mb-5 bg-slate-50 p-3 sm:p-4 rounded-md border border-slate-200">
-                    <h3 className="text-xs sm:text-sm font-bold text-blue-900 mb-2 sm:mb-3">MEMBER 3</h3>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 sm:gap-3">
-                      <div>
-                        <label className="block text-[11px] sm:text-xs font-semibold text-slate-600 mb-1">
-                          Full Name *
-                        </label>
-                        <input
-                          type="text"
-                          name="m3_name"
-                          value={formData.m3_name}
-                          onChange={handleFormChange}
-                          placeholder="Full Name"
-                          className="w-full px-3 py-2 text-base sm:text-sm bg-white border border-slate-300 rounded focus:ring-1 focus:ring-blue-600 outline-none"
-                          required
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-[11px] sm:text-xs font-semibold text-slate-600 mb-1">
-                          Roll Number *
-                        </label>
-                        <input
-                          type="text"
-                          name="m3_roll"
-                          value={formData.m3_roll}
-                          onChange={handleFormChange}
-                          placeholder="Roll Number"
-                          className="w-full px-3 py-2 text-base sm:text-sm bg-white border border-slate-300 rounded focus:ring-1 focus:ring-blue-600 outline-none"
-                          required
-                        />
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Topic Selection */}
-                  <div className="mb-5 sm:mb-6">
-                    <label className="block text-[11px] sm:text-xs font-bold text-slate-700 mb-1">
-                      DAA Presentation Topic *
-                    </label>
-                    <select
-                      name="topic"
-                      value={formData.topic}
-                      onChange={handleFormChange}
-                      className="w-full px-3 py-2 text-base sm:text-sm bg-white border border-slate-300 rounded focus:ring-1 focus:ring-blue-600 outline-none"
-                      required
-                    >
-                      <option value="">-- Select One Presentation Topic --</option>
-                      {modules.map((mod) => {
-                        const modTopics = availableTopics.filter((t) => t.module === mod);
-                        if (modTopics.length === 0) return null;
-                        return (
-                          <optgroup key={mod} label={mod}>
-                            {modTopics.map((t) => (
-                              <option key={t.id} value={t.title}>
-                                {t.title}
-                              </option>
-                            ))}
-                          </optgroup>
-                        );
-                      })}
-                    </select>
-                  </div>
-
-                  <button
-                    type="submit"
-                    disabled={isSubmitting}
-                    className="w-full py-3 sm:py-2.5 bg-blue-600 text-white rounded font-semibold sm:font-medium text-sm hover:bg-blue-700 transition cursor-pointer disabled:bg-blue-300"
-                  >
-                    {isSubmitting ? 'Registering...' : 'Register Group'}
-                  </button>
+              {formStatus.message && (
+                <div className={`p-3 rounded-lg mb-4 text-xs font-medium flex items-center gap-2 ${
+                  formStatus.type === 'error' 
+                    ? 'bg-rose-50 text-rose-700 border border-rose-200' 
+                    : 'bg-emerald-50 text-emerald-800 border border-emerald-200'
+                }`}>
+                  {formStatus.type === 'error' ? <AlertCircle className="w-4 h-4 shrink-0" /> : <CheckCircle2 className="w-4 h-4 shrink-0" />}
+                  <span>{formStatus.message}</span>
                 </div>
+              )}
+
+              <form onSubmit={handleSubmit} className="space-y-4">
+                {/* Team Size Dropdown */}
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
+                    Team Size <span className="text-rose-500">*</span>
+                  </label>
+                  <select
+                    required
+                    value={teamSize}
+                    onChange={handleTeamSizeChange}
+                    className="w-full px-3 py-2 text-xs border border-slate-300 rounded focus:ring-1 focus:ring-blue-600 outline-none bg-white"
+                  >
+                    <option value="3">3 Members</option>
+                    <option value="4">4 Members</option>
+                  </select>
+                </div>
+
+                {/* MEMBER 1 */}
+                <div className="p-3 bg-slate-50 border border-slate-200 rounded-lg space-y-2">
+                  <span className="text-xs font-bold text-blue-700">MEMBER 1</span>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                    <input
+                      type="text"
+                      required
+                      placeholder="Full Name"
+                      value={formData.m1_name}
+                      onChange={(e) => setFormData({ ...formData, m1_name: e.target.value })}
+                      className="w-full px-3 py-1.5 text-xs border border-slate-300 rounded focus:ring-1 focus:ring-blue-600 outline-none bg-white"
+                    />
+                    <input
+                      type="text"
+                      required
+                      placeholder="Roll Number"
+                      value={formData.m1_roll}
+                      onChange={(e) => setFormData({ ...formData, m1_roll: e.target.value })}
+                      className="w-full px-3 py-1.5 text-xs border border-slate-300 rounded focus:ring-1 focus:ring-blue-600 outline-none bg-white font-mono"
+                    />
+                  </div>
+                </div>
+
+                {/* MEMBER 2 */}
+                <div className="p-3 bg-slate-50 border border-slate-200 rounded-lg space-y-2">
+                  <span className="text-xs font-bold text-blue-700">MEMBER 2</span>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                    <input
+                      type="text"
+                      required
+                      placeholder="Full Name"
+                      value={formData.m2_name}
+                      onChange={(e) => setFormData({ ...formData, m2_name: e.target.value })}
+                      className="w-full px-3 py-1.5 text-xs border border-slate-300 rounded focus:ring-1 focus:ring-blue-600 outline-none bg-white"
+                    />
+                    <input
+                      type="text"
+                      required
+                      placeholder="Roll Number"
+                      value={formData.m2_roll}
+                      onChange={(e) => setFormData({ ...formData, m2_roll: e.target.value })}
+                      className="w-full px-3 py-1.5 text-xs border border-slate-300 rounded focus:ring-1 focus:ring-blue-600 outline-none bg-white font-mono"
+                    />
+                  </div>
+                </div>
+
+                {/* MEMBER 3 */}
+                <div className="p-3 bg-slate-50 border border-slate-200 rounded-lg space-y-2">
+                  <span className="text-xs font-bold text-blue-700">MEMBER 3</span>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                    <input
+                      type="text"
+                      required
+                      placeholder="Full Name"
+                      value={formData.m3_name}
+                      onChange={(e) => setFormData({ ...formData, m3_name: e.target.value })}
+                      className="w-full px-3 py-1.5 text-xs border border-slate-300 rounded focus:ring-1 focus:ring-blue-600 outline-none bg-white"
+                    />
+                    <input
+                      type="text"
+                      required
+                      placeholder="Roll Number"
+                      value={formData.m3_roll}
+                      onChange={(e) => setFormData({ ...formData, m3_roll: e.target.value })}
+                      className="w-full px-3 py-1.5 text-xs border border-slate-300 rounded focus:ring-1 focus:ring-blue-600 outline-none bg-white font-mono"
+                    />
+                  </div>
+                </div>
+
+                {/* MEMBER 4 (Rendered only when teamSize === '4') */}
+                {teamSize === '4' && (
+                  <div className="p-3 bg-slate-50 border border-slate-200 rounded-lg space-y-2">
+                    <span className="text-xs font-bold text-blue-700">MEMBER 4</span>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                      <input
+                        type="text"
+                        required={teamSize === '4'}
+                        placeholder="Full Name"
+                        value={formData.m4_name}
+                        onChange={(e) => setFormData({ ...formData, m4_name: e.target.value })}
+                        className="w-full px-3 py-1.5 text-xs border border-slate-300 rounded focus:ring-1 focus:ring-blue-600 outline-none bg-white"
+                      />
+                      <input
+                        type="text"
+                        required={teamSize === '4'}
+                        placeholder="Roll Number"
+                        value={formData.m4_roll}
+                        onChange={(e) => setFormData({ ...formData, m4_roll: e.target.value })}
+                        className="w-full px-3 py-1.5 text-xs border border-slate-300 rounded focus:ring-1 focus:ring-blue-600 outline-none bg-white font-mono"
+                      />
+                    </div>
+                  </div>
+                )}
+
+                {/* TOPIC SELECTION */}
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
+                    Presentation Topic <span className="text-rose-500">*</span>
+                  </label>
+                  <select
+                    required
+                    value={formData.topic}
+                    onChange={(e) => setFormData({ ...formData, topic: e.target.value })}
+                    className="w-full px-3 py-2 text-xs bg-white border border-slate-300 rounded focus:ring-1 focus:ring-blue-600 outline-none"
+                  >
+                    <option value="">-- Choose an Available Topic ({availableTopics.length} remaining) --</option>
+                    {availableTopics.map(topic => (
+                      <option key={topic} value={topic}>{topic}</option>
+                    ))}
+                  </select>
+                </div>
+
+                <button
+                  type="submit"
+                  disabled={isSubmitting}
+                  className="w-full py-2.5 px-4 bg-blue-700 hover:bg-blue-800 text-white font-semibold rounded shadow-sm text-xs sm:text-sm transition-colors cursor-pointer disabled:opacity-50"
+                >
+                  {isSubmitting ? 'Registering...' : 'Submit Group Registration'}
+                </button>
               </form>
-            )}
+            </div>
           </div>
         )}
 
-        {/* ORGANISER PORTAL TAB */}
+        {/* ================= ORGANISER VIEW ================= */}
         {activeTab === 'organiser' && (
           <div>
-            {!isOrganiserAuth ? (
-              <div className="max-w-sm mx-auto bg-white border border-slate-200 rounded-lg p-5 sm:p-6 shadow-sm my-4 sm:my-8">
-                <div className="text-center mb-4">
-                  <h3 className="text-sm sm:text-base font-bold text-slate-800">Organiser Portal</h3>
-                  <p className="text-xs text-slate-500 mt-1">Please enter your Security Key to continue.</p>
+            {!isAuthenticated ? (
+              <div className="max-w-md mx-auto bg-white rounded-xl border border-slate-200 p-6 sm:p-8 text-center shadow-sm">
+                <div className="w-12 h-12 rounded-full bg-blue-50 text-blue-700 flex items-center justify-center mx-auto mb-4">
+                  <KeyRound className="w-6 h-6" />
                 </div>
-                {authError && (
-                  <div className="mb-3 p-2 bg-rose-50 border border-rose-200 text-rose-700 text-xs rounded text-center">
-                    {authError}
-                  </div>
-                )}
-                <form onSubmit={handleAuthSubmit} className="space-y-4">
-                  <div>
-                    <input
-                      type="password"
-                      value={securityKeyInput}
-                      onChange={(e) => setSecurityKeyInput(e.target.value)}
-                      placeholder="Security Key"
-                      className="w-full px-3 py-2 text-base sm:text-sm border border-slate-300 rounded focus:ring-1 focus:ring-blue-600 outline-none"
-                      required
-                    />
-                  </div>
+                <h3 className="text-base font-bold text-slate-900 mb-1">Organiser Access</h3>
+                <p className="text-xs text-slate-500 mb-4">Enter administrative key to manage groups and print reports.</p>
+                <form onSubmit={handleLogin} className="space-y-3">
+                  <input
+                    type="password"
+                    placeholder="Enter Security Key..."
+                    value={securityKeyInput}
+                    onChange={(e) => setSecurityKeyInput(e.target.value)}
+                    className="w-full px-3 py-2 text-xs border border-slate-300 rounded focus:ring-1 focus:ring-blue-600 outline-none"
+                  />
+                  {authError && <p className="text-[11px] text-rose-600 font-semibold">{authError}</p>}
                   <button
                     type="submit"
-                    className="w-full py-2.5 sm:py-2 bg-blue-600 text-white text-xs sm:text-sm font-medium rounded hover:bg-blue-700 transition cursor-pointer"
+                    className="w-full py-2 px-4 bg-blue-700 hover:bg-blue-800 text-white font-semibold rounded text-xs transition cursor-pointer"
                   >
-                    Verify Access
+                    Authenticate
                   </button>
                 </form>
               </div>
             ) : (
               <div className="space-y-4">
-                {/* Organiser Controls Header */}
-                <div className="no-print bg-white border border-slate-200 rounded-lg p-3 sm:p-4 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 shadow-sm">
-                  <div className="flex items-center gap-2">
-                    <button
-                      onClick={() => setOrganiserSubTab('groups')}
-                      className={`flex-1 sm:flex-initial text-center px-3 py-2 sm:py-1.5 text-xs font-semibold rounded cursor-pointer ${
-                        organiserSubTab === 'groups' ? 'bg-blue-600 text-white' : 'bg-slate-100 text-slate-700'
-                      }`}
-                    >
-                      Registered Groups ({groups.length})
-                    </button>
-                    <button
-                      onClick={() => setOrganiserSubTab('topics')}
-                      className={`flex-1 sm:flex-initial text-center px-3 py-2 sm:py-1.5 text-xs font-semibold rounded cursor-pointer ${
-                        organiserSubTab === 'topics' ? 'bg-blue-600 text-white' : 'bg-slate-100 text-slate-700'
-                      }`}
-                    >
-                      Manage Topics ({topics.length})
-                    </button>
+                {/* TOOLBAR */}
+                <div className="no-print flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2.5 bg-white p-3 rounded-lg border border-slate-200 shadow-sm">
+                  <div className="relative flex-1">
+                    <Search className="w-4 h-4 text-slate-400 absolute left-3 top-2.5" />
+                    <input
+                      type="text"
+                      value={searchTerm}
+                      onChange={(e) => setSearchTerm(e.target.value)}
+                      placeholder="Search name, roll, or topic..."
+                      className="w-full pl-9 pr-3 py-1.5 text-xs border border-slate-300 rounded focus:ring-1 focus:ring-blue-600 outline-none"
+                    />
                   </div>
-
                   <div className="flex items-center gap-2">
                     <button
-                      onClick={handleToggleResponses}
-                      className={`flex-1 sm:flex-initial justify-center px-3 py-2 sm:py-1.5 text-xs font-semibold rounded flex items-center gap-1.5 cursor-pointer ${
-                        isAcceptingResponses ? 'bg-rose-600 text-white hover:bg-rose-700' : 'bg-emerald-600 text-white hover:bg-emerald-700'
-                      }`}
+                      onClick={handleExportCSV}
+                      className="px-3 py-1.5 text-xs font-semibold bg-slate-100 hover:bg-slate-200 text-slate-800 rounded flex items-center gap-1 cursor-pointer"
                     >
-                      {isAcceptingResponses ? (
-                        <>
-                          <Lock className="w-3.5 h-3.5" /> Stop Responses
-                        </>
-                      ) : (
-                        <>
-                          <Unlock className="w-3.5 h-3.5" /> Accept Responses
-                        </>
-                      )}
+                      <Download className="w-3.5 h-3.5" /> Export CSV
                     </button>
-
                     <button
-                      onClick={() => setIsOrganiserAuth(false)}
-                      className="px-3 py-2 sm:py-1.5 text-xs font-semibold bg-slate-100 text-slate-700 hover:bg-slate-200 rounded flex items-center justify-center gap-1 cursor-pointer"
+                      onClick={() => window.print()}
+                      className="px-3 py-1.5 text-xs font-semibold bg-slate-100 hover:bg-slate-200 text-slate-800 rounded flex items-center gap-1 cursor-pointer"
                     >
-                      <LogOut className="w-3.5 h-3.5" /> Exit
+                      <Printer className="w-3.5 h-3.5" /> Print / Save PDF
+                    </button>
+                    <button
+                      onClick={() => setIsAuthenticated(false)}
+                      className="px-3 py-1.5 text-xs font-semibold bg-rose-50 hover:bg-rose-100 text-rose-700 rounded flex items-center gap-1 cursor-pointer"
+                    >
+                      <LogOut className="w-3.5 h-3.5" /> Logout
                     </button>
                   </div>
                 </div>
 
-                {/* SubTab 1: Groups */}
-                {organiserSubTab === 'groups' && (
-                  <div className="space-y-4">
-                    <div className="no-print flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2.5 sm:gap-3 bg-white p-3 rounded-lg border border-slate-200">
-                      <div className="relative flex-1">
-                        <Search className="w-4 h-4 text-slate-400 absolute left-3 top-3 sm:top-2.5" />
-                        <input
-                          type="text"
-                          value={searchTerm}
-                          onChange={(e) => setSearchTerm(e.target.value)}
-                          placeholder="Search roll, name, or topic..."
-                          className="w-full pl-9 pr-3 py-2 sm:py-1.5 text-base sm:text-xs border border-slate-300 rounded focus:ring-1 focus:ring-blue-600 outline-none"
-                        />
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <button
-                          onClick={handleExportCSV}
-                          className="flex-1 sm:flex-initial justify-center px-3 py-2 sm:py-1.5 text-xs font-semibold bg-slate-100 hover:bg-slate-200 text-slate-800 rounded flex items-center gap-1 cursor-pointer"
-                        >
-                          <Download className="w-3.5 h-3.5" /> Export CSV
-                        </button>
-                        <button
-                          onClick={() => window.print()}
-                          className="flex-1 sm:flex-initial justify-center px-3 py-2 sm:py-1.5 text-xs font-semibold bg-slate-100 hover:bg-slate-200 text-slate-800 rounded flex items-center gap-1 cursor-pointer"
-                        >
-                          <Printer className="w-3.5 h-3.5" /> Print
-                        </button>
-                      </div>
-                    </div>
+                {/* 4-COLUMN ORGANISER TABLE VIEW */}
+                <div className="bg-white border border-slate-200 rounded-lg shadow-sm overflow-x-auto">
+                  <table className="w-full text-left text-xs border-collapse">
+                    <thead>
+                      <tr className="bg-slate-100 text-slate-700 font-bold border-b border-slate-200">
+                        <th className="py-2.5 px-3 w-20 text-center">Group No.</th>
+                        <th className="py-2.5 px-3 min-w-[170px]">Students Name</th>
+                        <th className="py-2.5 px-3 min-w-[120px]">Roll Numbers</th>
+                        <th className="py-2.5 px-3 min-w-[210px]">Topic Name</th>
+                        <th className="py-2.5 px-2 w-12 text-center no-print">Action</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-100">
+                      {filteredGroups.map((g, idx) => (
+                        <tr key={g.id} className="hover:bg-slate-50">
+                          {/* Col 1: Group No */}
+                          <td className="py-2.5 px-3 text-center font-bold text-blue-700 whitespace-nowrap">
+                            Group {idx + 1}
+                          </td>
 
-                    {filteredGroups.length === 0 ? (
-                      <div className="bg-white border border-slate-200 rounded-lg p-6 sm:p-8 text-center text-slate-500 text-xs sm:text-sm">
-                        No groups registered yet.
-                      </div>
-                    ) : (
-                      <div className="space-y-3">
-                        {filteredGroups.map((g, idx) => (
-                          <div key={g.id} className="bg-white border border-slate-200 rounded-lg p-3.5 sm:p-4 shadow-sm">
-                            <div className="flex items-center justify-between border-b pb-2 mb-3">
-                              <span className="text-xs font-bold text-blue-700">Group {idx + 1}</span>
-                              <div className="flex items-center gap-2">
-                                <span className="text-[11px] sm:text-xs text-slate-500">
-                                  {g.createdAt ? new Date(g.createdAt).toLocaleDateString() : ''}
-                                </span>
-                                <button
-                                  onClick={() => setGroupToDelete(g)}
-                                  className="no-print text-rose-600 hover:text-rose-800 p-1.5 sm:p-1 cursor-pointer"
-                                  title="Delete Group"
-                                >
-                                  <Trash2 className="w-4 h-4" />
-                                </button>
-                              </div>
+                          {/* Col 2: Student Names */}
+                          <td className="py-2.5 px-3 text-slate-800 font-medium">
+                            <div className="space-y-0.5">
+                              <div>1. {g.m1_name}</div>
+                              <div>2. {g.m2_name}</div>
+                              <div>3. {g.m3_name}</div>
+                              {g.m4_name && <div>4. {g.m4_name}</div>}
                             </div>
+                          </td>
 
-                            <div className="grid grid-cols-1 md:grid-cols-3 gap-2.5 sm:gap-3 mb-3 text-xs">
-                              <div className="bg-slate-50 p-2.5 rounded border border-slate-200">
-                                <div className="text-slate-400 font-semibold mb-1 text-[11px]">MEMBER 1</div>
-                                <div className="font-bold text-slate-800">{g.m1_name}</div>
-                                <div className="text-slate-600">{g.m1_roll}</div>
-                              </div>
-                              <div className="bg-slate-50 p-2.5 rounded border border-slate-200">
-                                <div className="text-slate-400 font-semibold mb-1 text-[11px]">MEMBER 2</div>
-                                <div className="font-bold text-slate-800">{g.m2_name}</div>
-                                <div className="text-slate-600">{g.m2_roll}</div>
-                              </div>
-                              <div className="bg-slate-50 p-2.5 rounded border border-slate-200">
-                                <div className="text-slate-400 font-semibold mb-1 text-[11px]">MEMBER 3</div>
-                                <div className="font-bold text-slate-800">{g.m3_name}</div>
-                                <div className="text-slate-600">{g.m3_roll}</div>
-                              </div>
+                          {/* Col 3: Roll Numbers */}
+                          <td className="py-2.5 px-3 text-slate-600 font-mono">
+                            <div className="space-y-0.5">
+                              <div>{g.m1_roll}</div>
+                              <div>{g.m2_roll}</div>
+                              <div>{g.m3_roll}</div>
+                              {g.m4_roll && <div>{g.m4_roll}</div>}
                             </div>
+                          </td>
 
-                            <div className="bg-blue-50/60 p-2.5 rounded border border-blue-100 text-xs break-words">
-                              <span className="font-semibold text-blue-900">Topic: </span>
-                              <span className="text-blue-950 font-medium">{g.topic}</span>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                )}
+                          {/* Col 4: Topic Name */}
+                          <td className="py-2.5 px-3 font-semibold text-slate-900">
+                            {g.topic}
+                          </td>
 
-                {/* SubTab 2: Topics Management */}
-                {organiserSubTab === 'topics' && (
-                  <div className="space-y-4">
-                    {/* Add Topic Form */}
-                    <form onSubmit={handleAddTopic} className="bg-white border border-slate-200 rounded-lg p-3.5 sm:p-4 shadow-sm">
-                      <h4 className="text-[11px] sm:text-xs font-bold text-slate-700 mb-2.5 sm:mb-3 uppercase tracking-wider">
-                        Add New DAA Topic
-                      </h4>
-                      <div className="flex flex-col sm:flex-row gap-2">
-                        <select
-                          value={newTopic.module}
-                          onChange={(e) => setNewTopic({ ...newTopic, module: e.target.value })}
-                          className="px-3 py-2 sm:py-1.5 text-base sm:text-xs border border-slate-300 rounded outline-none"
-                        >
-                          {modules.map((m) => (
-                            <option key={m} value={m}>{m}</option>
-                          ))}
-                        </select>
-                        <input
-                          type="text"
-                          value={newTopic.title}
-                          onChange={(e) => setNewTopic({ ...newTopic, title: e.target.value })}
-                          placeholder="Topic title..."
-                          className="flex-1 px-3 py-2 sm:py-1.5 text-base sm:text-xs border border-slate-300 rounded outline-none"
-                          required
-                        />
-                        <button
-                          type="submit"
-                          className="px-4 py-2 sm:py-1.5 bg-blue-600 text-white text-xs font-semibold rounded hover:bg-blue-700 transition cursor-pointer flex items-center justify-center gap-1"
-                        >
-                          <Plus className="w-3.5 h-3.5" /> Add Topic
-                        </button>
-                      </div>
-                    </form>
-
-                    {/* Topics List */}
-                    <div className="bg-white border border-slate-200 rounded-lg p-3.5 sm:p-4 shadow-sm space-y-3 sm:space-y-4">
-                      {modules.map((mod) => {
-                        const modTopics = topics.filter((t) => t.module === mod);
-                        return (
-                          <div key={mod} className="border border-slate-200 rounded-md overflow-hidden">
-                            <div className="bg-slate-100 px-3 py-2 text-xs font-bold text-slate-700 border-b border-slate-200 flex justify-between items-center">
-                              <span>{mod}</span>
-                              <span className="text-slate-500 font-normal">{modTopics.length} topics</span>
-                            </div>
-                            <div className="divide-y divide-slate-100">
-                              {modTopics.map((t) => {
-                                const isClaimed = claimedTopicTitles.includes(t.title?.trim().toLowerCase());
-                                return (
-                                  <div key={t.id} className="p-2.5 flex items-center justify-between text-xs hover:bg-slate-50 gap-2">
-                                    <div className="flex-1 pr-2 break-words">
-                                      <div className="font-medium text-slate-800">{t.title}</div>
-                                      {isClaimed && (
-                                        <span className="inline-block mt-0.5 text-[10px] bg-rose-100 text-rose-700 px-1.5 py-0.5 rounded font-semibold">
-                                          Taken
-                                        </span>
-                                      )}
-                                    </div>
-                                    <div className="flex items-center gap-1 shrink-0">
-                                      <button
-                                        onClick={() => setEditingTopic(t)}
-                                        className="p-1.5 sm:p-1 text-slate-500 hover:text-blue-600 cursor-pointer"
-                                        title="Edit"
-                                      >
-                                        <Edit2 className="w-3.5 h-3.5" />
-                                      </button>
-                                      <button
-                                        onClick={() => setTopicToDelete(t)}
-                                        className="p-1.5 sm:p-1 text-slate-500 hover:text-rose-600 cursor-pointer"
-                                        title="Delete"
-                                      >
-                                        <Trash2 className="w-3.5 h-3.5" />
-                                      </button>
-                                    </div>
-                                  </div>
-                                );
-                              })}
-                            </div>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  </div>
-                )}
+                          {/* Delete Action Button */}
+                          <td className="py-2.5 px-2 text-center no-print">
+                            <button
+                              onClick={() => setGroupToDelete(g)}
+                              className="text-rose-600 hover:text-rose-800 p-1 cursor-pointer"
+                              title="Delete Group"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
               </div>
             )}
           </div>
         )}
+
       </main>
 
-      {/* Delete Group Modal */}
+      {/* ---------------- DELETE MODAL ---------------- */}
       {groupToDelete && (
-        <div className="fixed inset-0 bg-black/40 flex items-center justify-center p-3 sm:p-4 z-50">
-          <div className="bg-white rounded-lg p-4 sm:p-5 max-w-sm w-full border border-slate-300 shadow-lg text-xs">
-            <h4 className="text-sm font-bold text-slate-800 mb-2">Delete Group Registration?</h4>
-            <p className="text-slate-600 mb-4 break-words">
-              This will free up the topic: <strong className="text-slate-800">{groupToDelete.topic}</strong> and allow other students to choose it.
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-xs p-4">
+          <div className="bg-white rounded-lg p-5 max-w-sm w-full shadow-lg border border-slate-200">
+            <h4 className="text-sm font-bold text-slate-900 mb-2">Confirm Delete</h4>
+            <p className="text-xs text-slate-600 mb-4">
+              Delete registration for <strong>{groupToDelete.topic}</strong>? This frees the topic for other teams.
             </p>
             <div className="flex justify-end gap-2">
               <button
                 onClick={() => setGroupToDelete(null)}
-                className="px-3 py-2 sm:py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded font-semibold cursor-pointer"
+                className="px-3 py-1.5 text-xs font-semibold bg-slate-100 hover:bg-slate-200 rounded text-slate-700 cursor-pointer"
               >
                 Cancel
               </button>
               <button
                 onClick={confirmDeleteGroup}
-                className="px-3 py-2 sm:py-1.5 bg-rose-600 hover:bg-rose-700 text-white rounded font-semibold cursor-pointer"
-              >
-                Confirm Delete
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Edit Topic Modal */}
-      {editingTopic && (
-        <div className="fixed inset-0 bg-black/40 flex items-center justify-center p-3 sm:p-4 z-50">
-          <form onSubmit={handleUpdateTopic} className="bg-white rounded-lg p-4 sm:p-5 max-w-sm w-full border border-slate-300 shadow-lg text-xs space-y-3">
-            <h4 className="text-sm font-bold text-slate-800 mb-1">Edit Topic</h4>
-            <div>
-              <label className="block text-[11px] font-semibold text-slate-600 mb-1">Module</label>
-              <select
-                value={editingTopic.module}
-                onChange={(e) => setEditingTopic({ ...editingTopic, module: e.target.value })}
-                className="w-full px-2.5 py-2 sm:py-1.5 text-base sm:text-xs border border-slate-300 rounded outline-none"
-              >
-                {modules.map((m) => (
-                  <option key={m} value={m}>{m}</option>
-                ))}
-              </select>
-            </div>
-            <div>
-              <label className="block text-[11px] font-semibold text-slate-600 mb-1">Topic Title</label>
-              <input
-                type="text"
-                value={editingTopic.title}
-                onChange={(e) => setEditingTopic({ ...editingTopic, title: e.target.value })}
-                className="w-full px-2.5 py-2 sm:py-1.5 text-base sm:text-xs border border-slate-300 rounded outline-none"
-                required
-              />
-            </div>
-            <div className="flex justify-end gap-2 pt-2">
-              <button
-                type="button"
-                onClick={() => setEditingTopic(null)}
-                className="px-3 py-2 sm:py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded font-semibold cursor-pointer"
-              >
-                Cancel
-              </button>
-              <button
-                type="submit"
-                className="px-3 py-2 sm:py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded font-semibold cursor-pointer"
-              >
-                Save
-              </button>
-            </div>
-          </form>
-        </div>
-      )}
-
-      {/* Delete Topic Modal */}
-      {topicToDelete && (
-        <div className="fixed inset-0 bg-black/40 flex items-center justify-center p-3 sm:p-4 z-50">
-          <div className="bg-white rounded-lg p-4 sm:p-5 max-w-sm w-full border border-slate-300 shadow-lg text-xs">
-            <h4 className="text-sm font-bold text-slate-800 mb-2">Delete Topic?</h4>
-            <p className="text-slate-600 mb-4 break-words">
-              Are you sure you want to remove <strong className="text-slate-800">{topicToDelete.title}</strong> from the syllabus list?
-            </p>
-            <div className="flex justify-end gap-2">
-              <button
-                onClick={() => setTopicToDelete(null)}
-                className="px-3 py-2 sm:py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded font-semibold cursor-pointer"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={confirmDeleteTopic}
-                className="px-3 py-2 sm:py-1.5 bg-rose-600 hover:bg-rose-700 text-white rounded font-semibold cursor-pointer"
+                className="px-3 py-1.5 text-xs font-semibold bg-rose-600 hover:bg-rose-700 rounded text-white cursor-pointer"
               >
                 Delete
               </button>
